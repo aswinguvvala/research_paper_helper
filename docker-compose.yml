@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  # AI Service (Python Flask)
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - EMBEDDING_MODEL=all-MiniLM-L6-v2
+      - MAX_BATCH_SIZE=32
+      - AI_SERVICE_PORT=5000
+      - DEBUG=false
+    volumes:
+      - ./ai-service:/app
+      - ai_models:/root/.cache/torch/sentence_transformers
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # Backend Server (Node.js)
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - NODE_ENV=production
+      - PORT=8000
+      - HOST=0.0.0.0
+      - AI_SERVICE_URL=http://ai-service:5000
+      - DATABASE_URL=/app/data/research_assistant.sqlite
+      - CORS_ORIGIN=http://localhost:3000,http://client:3000
+    volumes:
+      - ./server/data:/app/data
+      - ./server/uploads:/app/uploads
+      - ./server/logs:/app/logs
+    depends_on:
+      ai-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  # Frontend Client (React)
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - server
+    restart: unless-stopped
+
+  # Development services
+  # Uncomment for development with hot reload
+  # ai-service-dev:
+  #   image: python:3.11-slim
+  #   working_dir: /app
+  #   volumes:
+  #     - ./ai-service:/app
+  #   ports:
+  #     - "5000:5000"
+  #   command: >
+  #     sh -c "pip install -r requirements.txt && 
+  #            python app.py"
+  #   environment:
+  #     - DEBUG=true
+  #   profiles:
+  #     - dev
+
+volumes:
+  ai_models:
+    driver: local
+
+networks:
+  default:
+    name: research-assistant-network

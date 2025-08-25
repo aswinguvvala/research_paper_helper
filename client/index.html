@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Research Paper Assistant</title>
+    
+    <!-- Preload fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Meta tags -->
+    <meta name="description" content="AI-powered research paper reading assistant with contextual explanations and interactive chat">
+    <meta name="keywords" content="research, papers, AI, machine learning, academic, PDF, assistant">
+    <meta name="author" content="Research Assistant Team">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Research Paper Assistant">
+    <meta property="og:description" content="Transform dense academic papers into accessible, interactive learning experiences">
+    <meta property="og:type" content="website">
+    
+    <!-- Theme -->
+    <meta name="theme-color" content="#3b82f6">
+    
+    <!-- Prevent FOUC -->
+    <style>
+      html {
+        background-color: #f8fafc;
+      }
+      
+      /* Loading spinner styles */
+      .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #e5e7eb;
+        border-top: 4px solid #3b82f6;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 20px auto;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      .loading-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        font-family: 'Inter', sans-serif;
+        color: #64748b;
+      }
+    </style>
+  </head>
+  <body>
+    <noscript>
+      <div style="text-align: center; padding: 50px; font-family: 'Inter', sans-serif;">
+        <h1>JavaScript Required</h1>
+        <p>This application requires JavaScript to run. Please enable JavaScript in your browser.</p>
+      </div>
+    </noscript>
+    
+    <div id="root">
+      <!-- Fallback loading indicator -->
+      <div class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>Loading Research Paper Assistant...</p>
+      </div>
+    </div>
+    
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

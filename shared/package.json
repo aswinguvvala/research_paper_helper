@@ -1,0 +1,18 @@
+{
+  "name": "@research-assistant/shared",
+  "version": "1.0.0",
+  "description": "Shared TypeScript interfaces and utilities for research paper assistant",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  },
+  "peerDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

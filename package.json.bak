@@ -1,0 +1,51 @@
+{
+  "name": "research-paper-assistant",
+  "version": "1.0.0",
+  "description": "AI-powered research paper reading assistant with local embeddings and contextual chat",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server",
+    "ai-service",
+    "shared"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\" \"npm run dev:ai\"",
+    "dev:client": "cd client && npm run dev",
+    "dev:server": "cd server && npm run dev",
+    "dev:ai": "cd ai-service && python app.py",
+    "build": "npm run build:shared && npm run build:server && npm run build:client",
+    "build:shared": "cd shared && npm run build",
+    "build:server": "cd server && npm run build",
+    "build:client": "cd client && npm run build",
+    "test": "npm run test:server && npm run test:client",
+    "test:server": "cd server && npm test",
+    "test:client": "cd client && npm test",
+    "install:all": "npm install && npm run install:client && npm run install:server && npm run install:shared && npm run install:ai",
+    "install:client": "cd client && npm install",
+    "install:server": "cd server && npm install", 
+    "install:shared": "cd shared && npm install",
+    "install:ai": "cd ai-service && pip install -r requirements.txt"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.3.3",
+    "@types/node": "^20.10.5"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "python": ">=3.8.0"
+  },
+  "keywords": [
+    "ai",
+    "research",
+    "pdf",
+    "embeddings",
+    "langchain",
+    "machine-learning",
+    "react",
+    "typescript"
+  ],
+  "author": "Research Assistant Team",
+  "license": "MIT"
+}

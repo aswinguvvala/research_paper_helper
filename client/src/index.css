@@ -1,0 +1,313 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base styles */
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-secondary-50 text-secondary-900;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-secondary-100;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-secondary-300 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-secondary-400;
+  }
+
+  /* Selection styling */
+  ::selection {
+    @apply bg-primary-100 text-primary-900;
+  }
+
+  /* Focus styles */
+  *:focus {
+    @apply outline-none;
+  }
+
+  *:focus-visible {
+    @apply ring-2 ring-primary-500 ring-offset-2 ring-offset-white;
+  }
+}
+
+/* Component styles */
+@layer components {
+  /* Button variants */
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-primary-500;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary-100 text-secondary-700 hover:bg-secondary-200 focus-visible:ring-secondary-500;
+  }
+
+  .btn-outline {
+    @apply border border-secondary-300 bg-white text-secondary-700 hover:bg-secondary-50 focus-visible:ring-secondary-500;
+  }
+
+  .btn-ghost {
+    @apply bg-transparent text-secondary-600 hover:bg-secondary-100 focus-visible:ring-secondary-500;
+  }
+
+  .btn-sm {
+    @apply px-3 py-1.5 text-xs;
+  }
+
+  .btn-lg {
+    @apply px-6 py-3 text-base;
+  }
+
+  /* Input styles */
+  .input {
+    @apply block w-full px-3 py-2 border border-secondary-300 rounded-lg bg-white text-secondary-900 placeholder-secondary-500 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200;
+  }
+
+  .input-error {
+    @apply border-error-500 focus:ring-error-500 focus:border-error-500;
+  }
+
+  /* Card styles */
+  .card {
+    @apply bg-white border border-secondary-200 rounded-xl shadow-card;
+  }
+
+  .card-header {
+    @apply px-6 py-4 border-b border-secondary-200;
+  }
+
+  .card-body {
+    @apply px-6 py-4;
+  }
+
+  .card-footer {
+    @apply px-6 py-4 border-t border-secondary-200;
+  }
+
+  /* Text utilities */
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Animation utilities */
+  .animate-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .animate-out {
+    animation: fadeOut 0.3s ease-in;
+  }
+
+  /* Loading states */
+  .loading-spinner {
+    @apply inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin;
+  }
+
+  .loading-dots::after {
+    content: '';
+    animation: loadingDots 1.5s infinite;
+  }
+
+  /* Tooltip */
+  .tooltip {
+    @apply absolute z-50 px-2 py-1 text-xs font-medium text-white bg-secondary-800 rounded-md shadow-lg pointer-events-none;
+  }
+}
+
+/* Utility classes */
+@layer utilities {
+  /* Text selection utilities */
+  .select-none {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  .select-text {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+  }
+
+  .select-all {
+    -webkit-user-select: all;
+    -moz-user-select: all;
+    -ms-user-select: all;
+    user-select: all;
+  }
+
+  /* Backdrop blur utilities */
+  .backdrop-blur-xs {
+    backdrop-filter: blur(2px);
+  }
+
+  /* Gradient utilities */
+  .gradient-primary {
+    background: linear-gradient(135deg, theme('colors.primary.600'), theme('colors.primary.700'));
+  }
+
+  .gradient-secondary {
+    background: linear-gradient(135deg, theme('colors.secondary.100'), theme('colors.secondary.200'));
+  }
+
+  /* Border utilities */
+  .border-dashed-2 {
+    border-width: 2px;
+    border-style: dashed;
+  }
+
+  /* Aspect ratio utilities */
+  .aspect-pdf {
+    aspect-ratio: 8.5 / 11; /* Standard letter paper ratio */
+  }
+}
+
+/* PDF-specific styles */
+.react-pdf__Page {
+  @apply shadow-card bg-white;
+}
+
+.react-pdf__Page__textContent {
+  @apply select-text;
+}
+
+.react-pdf__Page__annotations {
+  @apply pointer-events-none;
+}
+
+/* Text highlight styles */
+.text-highlight {
+  @apply bg-yellow-200 border-yellow-300 border rounded px-1 -mx-1;
+  transition: all 0.2s ease;
+}
+
+.text-highlight:hover {
+  @apply bg-yellow-300 border-yellow-400;
+}
+
+.text-highlight.active {
+  @apply bg-primary-200 border-primary-300;
+}
+
+/* Chat message styles */
+.message-user {
+  @apply bg-primary-600 text-white;
+}
+
+.message-assistant {
+  @apply bg-white border border-secondary-200;
+}
+
+.message-typing {
+  @apply opacity-60;
+}
+
+/* Split pane styles */
+.split-pane {
+  @apply h-full overflow-hidden;
+}
+
+.split-pane-divider {
+  @apply bg-secondary-200 hover:bg-secondary-300 transition-colors duration-200 cursor-col-resize;
+  width: 4px;
+}
+
+.split-pane-divider:hover {
+  width: 6px;
+}
+
+/* Animation keyframes */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes loadingDots {
+  0%, 20% {
+    content: '.';
+  }
+  40% {
+    content: '..';
+  }
+  60%, 100% {
+    content: '...';
+  }
+}
+
+/* Responsive utilities */
+@media (max-width: 768px) {
+  .mobile-hidden {
+    @apply hidden;
+  }
+  
+  .mobile-full {
+    @apply w-full;
+  }
+}
+
+/* Print styles */
+@media print {
+  .print-hidden {
+    @apply hidden;
+  }
+  
+  .print-visible {
+    @apply block;
+  }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Dark mode support (prepared for future implementation) */
+@media (prefers-color-scheme: dark) {
+  .dark-mode-ready {
+    /* Dark mode styles will go here */
+  }
+}
