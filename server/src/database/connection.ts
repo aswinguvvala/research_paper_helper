@@ -158,6 +158,22 @@ export class DatabaseManager {
         session_id TEXT,
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (document_id) REFERENCES documents (id) ON DELETE CASCADE
+      )`,
+
+      // Highlights table (for document annotations)
+      `CREATE TABLE IF NOT EXISTS highlights (
+        id TEXT PRIMARY KEY,
+        document_id TEXT NOT NULL,
+        page_number INTEGER NOT NULL,
+        selected_text TEXT NOT NULL,
+        start_position INTEGER NOT NULL,
+        end_position INTEGER NOT NULL,
+        color TEXT NOT NULL CHECK (color IN ('yellow', 'blue', 'green', 'pink', 'orange', 'purple', 'red')),
+        notes TEXT,
+        bounding_box TEXT, -- JSON object with x, y, width, height
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (document_id) REFERENCES documents (id) ON DELETE CASCADE
       )`
     ];
 
@@ -180,7 +196,11 @@ export class DatabaseManager {
       'CREATE INDEX IF NOT EXISTS idx_document_sections_level ON document_sections (level)',
       'CREATE INDEX IF NOT EXISTS idx_search_analytics_document_id ON search_analytics (document_id)',
       'CREATE INDEX IF NOT EXISTS idx_search_analytics_query_hash ON search_analytics (query_hash)',
-      'CREATE INDEX IF NOT EXISTS idx_search_analytics_timestamp ON search_analytics (timestamp)'
+      'CREATE INDEX IF NOT EXISTS idx_search_analytics_timestamp ON search_analytics (timestamp)',
+      'CREATE INDEX IF NOT EXISTS idx_highlights_document_id ON highlights (document_id)',
+      'CREATE INDEX IF NOT EXISTS idx_highlights_page_number ON highlights (page_number)',
+      'CREATE INDEX IF NOT EXISTS idx_highlights_color ON highlights (color)',
+      'CREATE INDEX IF NOT EXISTS idx_highlights_created_at ON highlights (created_at)'
     ];
 
     for (const indexSQL of indexes) {

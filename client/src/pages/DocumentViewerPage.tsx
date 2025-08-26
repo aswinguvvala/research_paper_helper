@@ -54,39 +54,39 @@ const DocumentViewerPage: React.FC = () => {
   };
 
   const handleTextAction = (action: string, text: string, pageNumber?: number) => {
-    console.log('🎯 DocumentViewerPage: Handling text action', { action, textLength: text?.length, pageNumber, hasText: !!text });
+    console.log('DocumentViewerPage: Handling text action', { action, textLength: text?.length, pageNumber, hasText: !!text });
     
     try {
       if (!text || typeof text !== 'string') {
-        console.error('❌ DocumentViewerPage: Invalid text provided to handleTextAction', { action, text, pageNumber });
+        console.error('DocumentViewerPage: Invalid text provided to handleTextAction', { action, text, pageNumber });
         return;
       }
 
       switch (action) {
         case 'explain':
-          console.log('📖 DocumentViewerPage: Setting explain text');
+          console.log('DocumentViewerPage: Setting explain text');
           setSelectedText(`Can you explain this selected text: "${text}"`);
           break;
         case 'simplify':
-          console.log('📖 DocumentViewerPage: Setting simplify text');
+          console.log('DocumentViewerPage: Setting simplify text');
           setSelectedText(`Can you simplify and break down this text in simple terms: "${text}"`);
           break;
         case 'followup':
-          console.log('📖 DocumentViewerPage: Setting followup text');
+          console.log('DocumentViewerPage: Setting followup text');
           setSelectedText(`What follow-up questions should I ask about this text: "${text}"`);
           break;
         case 'bookmark':
-          console.log('📖 DocumentViewerPage: Bookmark action - to be implemented');
+          console.log('DocumentViewerPage: Bookmark action - to be implemented');
           // TODO: Implement bookmarking system
           break;
         default:
-          console.log('📖 DocumentViewerPage: Setting raw text');
+          console.log('DocumentViewerPage: Setting raw text');
           setSelectedText(text);
       }
       
-      console.log('✅ DocumentViewerPage: Text action handled successfully');
+      console.log('DocumentViewerPage: Text action handled successfully');
     } catch (error) {
-      console.error('❌ DocumentViewerPage: Error in handleTextAction', { error, action, text, pageNumber });
+      console.error('DocumentViewerPage: Error in handleTextAction', { error, action, text, pageNumber });
     }
   };
 

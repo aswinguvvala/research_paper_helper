@@ -1,7 +1,9 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Brain, BookOpen, MessageSquare, Copy, Bookmark, X } from 'lucide-react';
+import { Brain, BookOpen, MessageSquare, Copy, Bookmark, X, Highlighter } from 'lucide-react';
 import clsx from 'clsx';
+import HighlightColorPicker from './HighlightColorPicker';
+import { HighlightColor, highlightManager } from '@/services/highlightManager';
 
 export interface TextSelectionData {
   text: string;
@@ -25,6 +27,7 @@ export interface TextSelectionAction {
 export interface TextSelectionPopupProps {
   isVisible: boolean;
   selectionData: TextSelectionData | null;
+  documentId: string;
   onAction: (actionId: string, selectionData: TextSelectionData) => void;
   onClose: () => void;
   className?: string;
@@ -32,11 +35,17 @@ export interface TextSelectionPopupProps {
 
 const defaultActions: TextSelectionAction[] = [
   {
+    id: 'highlight',
+    label: 'Highlight',
+    icon: Highlighter,
+    description: 'Save this text with color highlighting',
+    primary: true
+  },
+  {
     id: 'explain',
     label: 'Explain',
     icon: Brain,
-    description: 'Get AI explanation adapted to your education level',
-    primary: true
+    description: 'Get AI explanation adapted to your education level'
   },
   {
     id: 'simplify',
@@ -67,11 +76,14 @@ const defaultActions: TextSelectionAction[] = [
 const TextSelectionPopup: React.FC<TextSelectionPopupProps> = ({
   isVisible,
   selectionData,
+  documentId,
   onAction,
   onClose,
   className
 }) => {
   const popupRef = useRef<HTMLDivElement>(null);
+  const [showColorPicker, setShowColorPicker] = useState(false);
+  const [selectedHighlightColor, setSelectedHighlightColor] = useState<HighlightColor>('yellow');
 
   // Calculate popup position to avoid viewport edges
   const getPopupPosition = useCallback(() => {
@@ -104,21 +116,25 @@ const TextSelectionPopup: React.FC<TextSelectionPopupProps> = ({
 
   // Handle action clicks
   const handleActionClick = useCallback((actionId: string) => {
-    console.log('🎬 TextSelectionPopup: Action clicked', { actionId, hasSelectionData: !!selectionData });
+    console.log('TextSelectionPopup: Action clicked', { actionId, hasSelectionData: !!selectionData });
     
     if (!selectionData) {
-      console.warn('❌ TextSelectionPopup: No selection data available for action', actionId);
+      console.warn('TextSelectionPopup: No selection data available for action', actionId);
       return;
     }
 
     try {
-      if (actionId === 'copy') {
+      if (actionId === 'highlight') {
+        // Show color picker for highlighting
+        setShowColorPicker(true);
+        return; // Don't close popup yet
+      } else if (actionId === 'copy') {
         // Handle copy action locally
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(selectionData.text).then(() => {
-            console.log('✅ Text copied to clipboard');
+            console.log('Text copied to clipboard');
           }).catch(err => {
-            console.error('❌ Failed to copy text:', err);
+            console.error('Failed to copy text:', err);
             // Fallback: try to use document.execCommand
             try {
               const textArea = document.createElement('textarea');
@@ -127,26 +143,54 @@ const TextSelectionPopup: React.FC<TextSelectionPopupProps> = ({
               textArea.select();
               document.execCommand('copy');
               document.body.removeChild(textArea);
-              console.log('✅ Text copied using fallback method');
+              console.log('Text copied using fallback method');
             } catch (fallbackErr) {
-              console.error('❌ Fallback copy also failed:', fallbackErr);
+              console.error('Fallback copy also failed:', fallbackErr);
             }
           });
         } else {
-          console.warn('❌ Clipboard API not available');
+          console.warn('Clipboard API not available');
         }
       } else {
         // Pass other actions to parent
-        console.log('🎯 TextSelectionPopup: Calling onAction', { actionId, text: selectionData.text.substring(0, 50) + '...' });
+        console.log('TextSelectionPopup: Calling onAction', { actionId, text: selectionData.text.substring(0, 50) + '...' });
         onAction(actionId, selectionData);
       }
       
       onClose();
     } catch (error) {
-      console.error('❌ TextSelectionPopup: Error in handleActionClick', { error, actionId, selectionData });
+      console.error('TextSelectionPopup: Error in handleActionClick', { error, actionId, selectionData });
       // Don't close the popup if there's an error, let user try again
     }
   }, [selectionData, onAction, onClose]);
+
+  // Handle highlight creation
+  const handleCreateHighlight = useCallback(async (color: HighlightColor) => {
+    if (!selectionData) return;
+
+    try {
+      await highlightManager.createHighlight({
+        documentId,
+        pageNumber: selectionData.pageNumber || 1,
+        selectedText: selectionData.text,
+        startPosition: 0, // These should be calculated from actual text selection
+        endPosition: selectionData.text.length,
+        color,
+        boundingBox: selectionData.position
+      });
+
+      console.log('Highlight created successfully', { 
+        documentId, 
+        color, 
+        text: selectionData.text.substring(0, 50) + '...' 
+      });
+      
+      setShowColorPicker(false);
+      onClose();
+    } catch (error) {
+      console.error('Failed to create highlight:', error);
+    }
+  }, [selectionData, documentId, onClose]);
 
   // Close on escape key
   useEffect(() => {
@@ -206,7 +250,7 @@ const TextSelectionPopup: React.FC<TextSelectionPopupProps> = ({
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
               <h3 className="text-sm font-medium text-secondary-900">
-                🎯 Text Ready for AI Analysis
+                Text Analysis Options
                 {selectionData.pageNumber && (
                   <span className="text-xs text-secondary-500 ml-2">
                     Page {selectionData.pageNumber}
@@ -233,16 +277,37 @@ const TextSelectionPopup: React.FC<TextSelectionPopupProps> = ({
           
           <div className="mt-2 text-xs text-green-700 bg-green-50 rounded px-2 py-1 flex items-center space-x-1">
             <div className="w-1 h-1 bg-green-500 rounded-full animate-pulse"></div>
-            <span>✨ Choose an action below or send to chat directly</span>
+            <span>Choose an action below or send to chat directly</span>
           </div>
         </div>
+
+        {/* Color picker for highlighting */}
+        <AnimatePresence>
+          {showColorPicker && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <div className="bg-gradient-to-r from-yellow-25 to-orange-25 rounded-lg p-3 border border-yellow-200 mb-3">
+                <HighlightColorPicker
+                  selectedColor={selectedHighlightColor}
+                  onColorSelect={handleCreateHighlight}
+                  onClose={() => setShowColorPicker(false)}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Action buttons */}
         <div className="space-y-2">
           {/* Primary AI actions */}
           <div className="bg-gradient-to-r from-primary-25 to-blue-25 rounded-lg p-2 border border-primary-200">
             <p className="text-xs font-medium text-primary-700 mb-2 text-center">
-              🤖 AI-Powered Analysis
+              AI Analysis Tools
             </p>
             <div className="space-y-1">
               {defaultActions.slice(0, 3).map((action) => {
@@ -307,8 +372,7 @@ const TextSelectionPopup: React.FC<TextSelectionPopupProps> = ({
         <div className="mt-3 pt-2 border-t border-secondary-100">
           <div className="flex items-center justify-between text-xs text-secondary-500">
             <div className="flex items-center space-x-1">
-              <span>🎨</span>
-              <span>Text is ready for chat!</span>
+              <span>Text selected successfully</span>
             </div>
             <span>
               Press <kbd className="px-1 py-0.5 bg-secondary-100 rounded text-xs">Esc</kbd> to close

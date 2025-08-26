@@ -42,13 +42,69 @@ const validateSearchRequest = [
 ];
 
 // POST /api/documents/upload - Enhanced document upload with advanced processing
-router.post('/upload', upload.single('document'), async (req: Request, res: Response) => {
+router.post('/upload', (req: Request, res: Response, next) => {
+  logger.info('Upload request received', {
+    method: req.method,
+    url: req.url,
+    headers: {
+      'content-type': req.headers['content-type'],
+      'content-length': req.headers['content-length'],
+      'origin': req.headers['origin']
+    }
+  });
+  next();
+}, upload.single('document'), async (req: Request, res: Response) => {
   try {
+    logger.info('Processing upload request', {
+      hasFile: !!req.file,
+      body: req.body,
+      fileDetails: req.file ? {
+        fieldname: req.file.fieldname,
+        originalname: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.size
+      } : null
+    });
+
     if (!req.file) {
+      logger.warn('Upload failed: No file in request', { body: req.body });
       return res.status(400).json({
         error: {
           code: ErrorCode.VALIDATION_ERROR,
-          message: 'No file uploaded',
+          message: 'No file uploaded. Please select a PDF file.',
+          details: 'The request did not contain a file. Ensure you are uploading a PDF file.',
+          timestamp: new Date()
+        }
+      });
+    }
+
+    // Validate file type
+    if (req.file.mimetype !== 'application/pdf') {
+      logger.warn('Upload failed: Invalid file type', { 
+        mimetype: req.file.mimetype,
+        filename: req.file.originalname 
+      });
+      return res.status(400).json({
+        error: {
+          code: ErrorCode.VALIDATION_ERROR,
+          message: 'Invalid file type. Only PDF files are allowed.',
+          details: `Received file type: ${req.file.mimetype}`,
+          timestamp: new Date()
+        }
+      });
+    }
+
+    // Validate file size
+    if (req.file.size > 50 * 1024 * 1024) {
+      logger.warn('Upload failed: File too large', { 
+        size: req.file.size,
+        filename: req.file.originalname 
+      });
+      return res.status(400).json({
+        error: {
+          code: ErrorCode.VALIDATION_ERROR,
+          message: 'File too large. Maximum size is 50MB.',
+          details: `File size: ${(req.file.size / (1024 * 1024)).toFixed(2)}MB`,
           timestamp: new Date()
         }
       });
@@ -62,13 +118,18 @@ router.post('/upload', upload.single('document'), async (req: Request, res: Resp
       generateEmbeddings: req.body.generateEmbeddings !== 'false'
     };
 
-    logger.info('Enhanced document upload started', {
+    logger.info('Starting document upload', {
       filename: req.file.originalname,
       size: req.file.size,
       options: processingOptions
     });
 
     const response = await documentService.uploadDocument(req.file, processingOptions);
+
+    logger.info('Document upload successful', {
+      documentId: response.document.id,
+      filename: req.file.originalname
+    });
 
     res.json({
       ...response,
@@ -77,12 +138,36 @@ router.post('/upload', upload.single('document'), async (req: Request, res: Resp
     });
 
   } catch (error) {
-    logger.error('Document upload error', { error, filename: req.file?.originalname });
+    logger.error('Document upload error', { 
+      error: error.message,
+      stack: error.stack,
+      filename: req.file?.originalname,
+      fileSize: req.file?.size
+    });
+    
+    // Provide more specific error messages
+    let errorMessage = 'Upload failed';
+    let errorDetails = null;
+    
+    if (error.message?.includes('ENOENT')) {
+      errorMessage = 'File system error. Upload directory may not exist.';
+      errorDetails = 'Server configuration issue. Please try again later.';
+    } else if (error.message?.includes('ENOSPC')) {
+      errorMessage = 'Insufficient storage space on server.';
+      errorDetails = 'Server storage is full. Please try again later.';
+    } else if (error.message?.includes('database')) {
+      errorMessage = 'Database error during upload.';
+      errorDetails = 'Database connection issue. Please try again.';
+    } else if (error.message) {
+      errorMessage = error.message;
+      errorDetails = 'An error occurred during file processing.';
+    }
     
     res.status(500).json({
       error: {
         code: ErrorCode.PROCESSING_FAILED,
-        message: error.message || 'Upload failed',
+        message: errorMessage,
+        details: errorDetails,
         timestamp: new Date()
       }
     });

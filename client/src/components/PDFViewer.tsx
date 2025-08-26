@@ -2,6 +2,7 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Download, Loader2, AlertCircle } from 'lucide-react';
 import TextSelectionPopup, { TextSelectionData } from './TextSelectionPopup';
+import HighlightOverlay from './HighlightOverlay';
 
 // Browser detection utility
 const getBrowserName = (): string => {
@@ -233,7 +234,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
         onTextSelection(text, currentPage);
       }
       
-      console.log('📝 Text selected:', { 
+      console.log('Text selected:', { 
         text: text.substring(0, 50) + '...', 
         page: currentPage,
         browser: browserName 
@@ -245,7 +246,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
 
   // Handle popup action clicks
   const handleTextAction = useCallback((actionId: string, selectionData: TextSelectionData) => {
-    console.log('🎯 Text action triggered:', { action: actionId, text: selectionData.text.substring(0, 30) + '...' });
+    console.log('Text action triggered:', { action: actionId, text: selectionData.text.substring(0, 30) + '...' });
     
     if (onTextAction) {
       onTextAction(actionId, selectionData.text, selectionData.pageNumber);
@@ -287,9 +288,9 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
 
     // Log Safari-specific handling
     if (isSafari) {
-      console.log('🦊 Safari detected: Using iframe PDF viewer for optimal compatibility');
+      console.log('Safari detected: Using iframe PDF viewer for optimal compatibility');
     } else {
-      console.log('🚀 Non-Safari browser: Attempting react-pdf with fallback support');
+      console.log('Non-Safari browser: Attempting react-pdf with fallback support');
     }
   }, [documentId, pdfUrl, browserName, isSafari, useFallback, loading]);
 
@@ -361,25 +362,11 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
         {/* Enhanced toolbar for fallback */}
         <div className="flex items-center justify-between bg-white border-b border-secondary-200 px-4 py-3">
           <div className="flex items-center space-x-3">
-            {isSafari ? (
-              <div className="flex items-center space-x-2">
-                <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full">
-                  Safari Optimized
-                </span>
-                <span className="text-sm text-secondary-600">
-                  PDF Viewer
-                </span>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-2">
-                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                  Compatibility Mode
-                </span>
-                <span className="text-sm text-secondary-600">
-                  PDF Viewer
-                </span>
-              </div>
-            )}
+            <div className="flex items-center space-x-2">
+              <span className="text-sm font-medium text-secondary-900">
+                Document Viewer
+              </span>
+            </div>
           </div>
           <div className="flex items-center space-x-2">
             {!isSafari && (
@@ -409,11 +396,11 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
             className="w-full h-full border-0 bg-white"
             title={`PDF Document ${documentId}`}
             onLoad={() => {
-              console.log('✅ PDF iframe loaded successfully for', browserName);
+              console.log('PDF iframe loaded successfully for', browserName);
               setLoading(false);
             }}
             onError={(e) => {
-              console.error('❌ PDF iframe load error:', e);
+              console.error('PDF iframe load error:', e);
               setError('Failed to load PDF. Please try downloading the file.');
             }}
             style={{
@@ -421,23 +408,6 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
               minHeight: '100%'
             }}
           />
-          
-          {/* Safari-specific help text */}
-          {isSafari && (
-            <div className="absolute top-2 left-2 right-2 pointer-events-none">
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm text-orange-800 shadow-sm">
-                <div className="flex items-center space-x-2">
-                  <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                  <span className="font-medium">Safari PDF Viewer</span>
-                </div>
-                <p className="mt-1 text-xs">
-                  Using Safari's built-in PDF viewer for best compatibility. Use browser zoom controls if needed.
-                </p>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     );
@@ -533,7 +503,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
         <div className="flex justify-center">
           <div 
             ref={documentRef}
-            className="bg-white shadow-lg"
+            className="bg-white shadow-lg relative"
             style={{ 
               maxWidth: 'fit-content',
               userSelect: 'text',
@@ -565,13 +535,24 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                 renderAnnotationLayer={false}
               />
             </Document>
+
+            {/* Highlight Overlay */}
+            <HighlightOverlay
+              documentId={documentId}
+              pageNumber={currentPage}
+              scale={scale}
+              containerRef={documentRef}
+              onHighlightClick={(highlight) => {
+                console.log('Highlight clicked from PDF viewer:', highlight);
+              }}
+            />
             
             {/* Selection feedback overlay */}
             {selectedText && (
               <div className="absolute top-2 right-2 pointer-events-none">
                 <div className="bg-green-500 text-white text-xs px-2 py-1 rounded-full shadow-lg flex items-center space-x-1 animate-bounce">
                   <div className="w-1 h-1 bg-white rounded-full animate-pulse"></div>
-                  <span>🎯 Text Selected!</span>
+                  <span>Text Selected!</span>
                 </div>
               </div>
             )}
@@ -583,6 +564,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
       <TextSelectionPopup
         isVisible={showSelectionPopup}
         selectionData={selectionData}
+        documentId={documentId}
         onAction={handleTextAction}
         onClose={handleClosePopup}
       />
@@ -592,7 +574,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
         <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-40 pointer-events-none">
           <div className="bg-gradient-to-r from-blue-500 to-green-500 text-white text-sm px-4 py-2 rounded-full shadow-lg flex items-center space-x-2 animate-pulse">
             <div className="w-2 h-2 bg-white rounded-full animate-ping"></div>
-            <span>📝 Text ready for AI analysis!</span>
+            <span>Text ready for analysis!</span>
             <span className="text-xs opacity-75">({selectedText.text.length} chars selected)</span>
           </div>
         </div>

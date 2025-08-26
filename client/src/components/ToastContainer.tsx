@@ -51,7 +51,7 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
       
     showToast(
       'ai-ready',
-      '🤖 AI Ready to Analyze!',
+      'AI Ready to Analyze!',
       `Your selected text ${preview} is ready for AI analysis. Ask me anything about it!`,
       5000 // Show for 5 seconds
     );

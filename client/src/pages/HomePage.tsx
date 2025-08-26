@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Upload, FileText, Brain, Zap, Users, BookOpen, ArrowRight } from 'lucide-react';
+import { Upload, FileText, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
@@ -42,35 +42,13 @@ const HomePage: React.FC = () => {
     navigate(`/document/${documentId}?level=${selectedLevel}`);
   };
 
-  const features = [
-    {
-      icon: Brain,
-      title: 'AI-Powered Explanations',
-      description: 'Get contextual explanations adapted to your education level for any highlighted text.'
-    },
-    {
-      icon: Zap,
-      title: 'Local Embeddings',
-      description: 'Fast, cost-effective processing using local sentence transformers for document analysis.'
-    },
-    {
-      icon: Users,
-      title: 'Education Level Adaptation',
-      description: 'Explanations tailored from high school to PhD level, ensuring optimal comprehension.'
-    },
-    {
-      icon: BookOpen,
-      title: 'Interactive Chat',
-      description: 'Have natural conversations about research papers with proper citations and follow-ups.'
-    }
-  ];
 
   const educationLevels = Object.entries(EDUCATION_LEVEL_CONFIG);
 
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-primary-50 to-secondary-50 py-20 sm:py-24">
+      <section className="relative gradient-hero py-20 sm:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             className="text-center max-w-4xl mx-auto"
@@ -78,16 +56,13 @@ const HomePage: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-secondary-900 mb-6">
-              Transform{' '}
-              <span className="text-primary-600">Research Papers</span>
-              <br />
-              into Interactive Learning
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-secondary-900 dark:text-white mb-6">
+              Upload, Analyze, Learn
             </h1>
             
-            <p className="text-lg sm:text-xl text-secondary-600 mb-8 max-w-2xl mx-auto">
-              Upload any research paper and get AI-powered explanations, contextual chat, 
-              and insights adapted to your educational background.
+            <p className="text-lg sm:text-xl text-secondary-600 dark:text-secondary-300 mb-8 max-w-2xl mx-auto">
+              Upload any research paper to get AI-powered explanations at your education level. 
+              Chat with your documents and get contextual insights adapted to your background.
             </p>
 
             {/* Education Level Selector */}
@@ -118,68 +93,13 @@ const HomePage: React.FC = () => {
               />
             </motion.div>
 
-            {/* Demo Link */}
-            <motion.div
-              className="text-center"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.6 }}
-            >
-              <button className="btn btn-outline btn-sm">
-                <FileText className="w-4 h-4 mr-2" />
-                Try with Sample Paper
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </button>
-            </motion.div>
           </motion.div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            className="text-center mb-16"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            <h2 className="text-3xl sm:text-4xl font-bold text-secondary-900 mb-4">
-              How It Works
-            </h2>
-            <p className="text-lg text-secondary-600 max-w-2xl mx-auto">
-              Advanced AI technology meets intuitive design to make research papers accessible to everyone.
-            </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((feature, index) => (
-              <motion.div
-                key={feature.title}
-                className="text-center"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-              >
-                <div className="w-16 h-16 bg-primary-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                  <feature.icon className="w-8 h-8 text-primary-600" />
-                </div>
-                <h3 className="text-xl font-semibold text-secondary-900 mb-3">
-                  {feature.title}
-                </h3>
-                <p className="text-secondary-600">
-                  {feature.description}
-                </p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Education Levels Section */}
-      <section className="py-20 bg-secondary-50">
+      <section className="py-20 bg-secondary-50/50 dark:bg-secondary-800/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             className="text-center mb-16"
@@ -188,11 +108,11 @@ const HomePage: React.FC = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-3xl sm:text-4xl font-bold text-secondary-900 mb-4">
-              Explanations for Every Level
+            <h2 className="text-3xl sm:text-4xl font-bold text-secondary-900 dark:text-white mb-4">
+              Choose Your Learning Level
             </h2>
-            <p className="text-lg text-secondary-600 max-w-2xl mx-auto">
-              Our AI adapts its explanations to match your educational background and learning preferences.
+            <p className="text-lg text-secondary-600 dark:text-secondary-300 max-w-2xl mx-auto">
+              Get explanations tailored to your educational background, from general concepts to advanced research.
             </p>
           </motion.div>
 
@@ -200,8 +120,8 @@ const HomePage: React.FC = () => {
             {educationLevels.map(([level, config], index) => (
               <motion.div
                 key={level}
-                className={`card transition-all duration-200 cursor-pointer hover:shadow-popup ${
-                  selectedLevel === level ? 'ring-2 ring-primary-500 bg-primary-50' : 'hover:bg-secondary-50'
+                className={`card transition-all duration-200 cursor-pointer hover:shadow-lg hover:shadow-primary-500/10 hover:-translate-y-1 ${
+                  selectedLevel === level ? 'ring-2 ring-primary-500 bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-800/20' : 'hover:bg-white/90 dark:hover:bg-secondary-700/50'
                 }`}
                 onClick={() => setSelectedLevel(level as EducationLevel)}
                 initial={{ opacity: 0, y: 20 }}
@@ -211,14 +131,14 @@ const HomePage: React.FC = () => {
               >
                 <div className="card-body">
                   <div className="flex items-start justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-secondary-900">
+                    <h3 className="text-lg font-semibold text-secondary-900 dark:text-white">
                       {config.label}
                     </h3>
                     <div className={`w-3 h-3 rounded-full ${
-                      selectedLevel === level ? 'bg-primary-500' : 'bg-secondary-300'
+                      selectedLevel === level ? 'bg-primary-500' : 'bg-secondary-300 dark:bg-secondary-600'
                     }`} />
                   </div>
-                  <p className="text-secondary-600 text-sm">
+                  <p className="text-secondary-600 dark:text-secondary-300 text-sm">
                     {config.description}
                   </p>
                 </div>
@@ -229,8 +149,14 @@ const HomePage: React.FC = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-primary-600">
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+      <section className="py-20 bg-gradient-to-br from-primary-600 via-primary-700 to-purple-700 relative overflow-hidden">
+        <div className="absolute inset-0 bg-black/10"></div>
+        <div className="absolute inset-0">
+          <div className="absolute top-10 left-10 w-20 h-20 bg-white/10 rounded-full blur-xl"></div>
+          <div className="absolute bottom-20 right-20 w-32 h-32 bg-purple-300/20 rounded-full blur-2xl"></div>
+          <div className="absolute top-1/2 left-1/3 w-16 h-16 bg-blue-300/20 rounded-full blur-lg"></div>
+        </div>
+        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8 relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -238,14 +164,14 @@ const HomePage: React.FC = () => {
             transition={{ duration: 0.6 }}
           >
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
-              Ready to Start Learning?
+              Ready to Get Started?
             </h2>
             <p className="text-xl text-primary-100 mb-8">
-              Upload your first research paper and experience the future of academic reading.
+              Upload your research paper and start getting intelligent explanations right away.
             </p>
             <button 
               onClick={() => document.getElementById('document-upload')?.scrollIntoView({ behavior: 'smooth' })}
-              className="btn bg-white text-primary-600 hover:bg-primary-50 focus-visible:ring-white"
+              className="btn bg-white text-primary-600 hover:bg-primary-50 focus-visible:ring-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
             >
               <Upload className="w-5 h-5 mr-2" />
               Upload Document

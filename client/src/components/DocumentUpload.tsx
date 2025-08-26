@@ -1,12 +1,11 @@
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { motion } from 'framer-motion';
-import { Upload, FileText, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { Upload, FileText, AlertCircle, CheckCircle, Loader2, X } from 'lucide-react';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 
 import { EducationLevel, ProcessingStatus } from '@/types';
-// Simplified file validation
+
 const validateFileUpload = (file: File) => {
   if (!file) throw new Error('No file provided');
   if (file.type !== 'application/pdf') throw new Error('Only PDF files are allowed');
@@ -30,25 +29,30 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  // Real API upload function
-  const uploadDocument = async (file: File) => {
+  const handleUpload = async () => {
+    if (!selectedFile) return;
+
     setUploadStatus(ProcessingStatus.PROCESSING);
     setUploadProgress(0);
 
     try {
-      // Create FormData for file upload
       const formData = new FormData();
-      formData.append('document', file);
+      formData.append('document', selectedFile);
       formData.append('preserveStructure', 'true');
       formData.append('extractMetadata', 'true');
       formData.append('generateEmbeddings', 'true');
 
-      // Start progress simulation
       const progressInterval = setInterval(() => {
-        setUploadProgress(prev => Math.min(prev + 5, 80));
+        setUploadProgress(prev => Math.min(prev + 5, 95));
       }, 300);
 
-      // Make actual API call
+      console.log('Starting upload request...', {
+        url: '/api/documents/upload',
+        fileName: selectedFile.name,
+        fileSize: selectedFile.size,
+        fileType: selectedFile.type
+      });
+
       const response = await fetch('/api/documents/upload', {
         method: 'POST',
         body: formData
@@ -56,9 +60,38 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
 
       clearInterval(progressInterval);
 
+      console.log('Upload response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error?.message || `Upload failed: ${response.statusText}`);
+        const errorData = await response.json().catch((parseError) => {
+          console.error('Failed to parse error response:', parseError);
+          return {};
+        });
+        
+        console.error('Upload failed with error data:', errorData);
+        
+        let errorMessage = 'Upload failed. Please try again.';
+        if (errorData.error?.message) {
+          errorMessage = errorData.error.message;
+          if (errorData.error?.details) {
+            errorMessage += ` (${errorData.error.details})`;
+          }
+        } else if (response.status === 413) {
+          errorMessage = 'File too large. Maximum size is 50MB.';
+        } else if (response.status === 415) {
+          errorMessage = 'Unsupported file type. Only PDF files are allowed.';
+        } else if (response.status === 0 || !response.status) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        } else {
+          errorMessage = `Upload failed with status ${response.status}: ${response.statusText}`;
+        }
+        
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
@@ -68,7 +101,6 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
       
       toast.success('Document uploaded successfully!');
       
-      // Call success callback with real document ID
       setTimeout(() => {
         onUploadSuccess(result.document.id);
       }, 500);
@@ -76,30 +108,40 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
     } catch (error) {
       setUploadStatus(ProcessingStatus.FAILED);
       const errorMessage = error instanceof Error ? error.message : 'Upload failed. Please try again.';
+      
+      console.error('Upload error details:', {
+        error: error,
+        message: errorMessage,
+        fileName: selectedFile?.name,
+        fileSize: selectedFile?.size,
+        fileType: selectedFile?.type,
+        timestamp: new Date().toISOString()
+      });
+      
       toast.error(errorMessage);
-      console.error('Upload error:', error);
     }
   };
 
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+  const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (!file) return;
 
     try {
       validateFileUpload(file);
       setSelectedFile(file);
-      await uploadDocument(file);
+      setUploadStatus(null);
     } catch (error: any) {
       toast.error(error.message || 'Invalid file. Please upload a PDF.');
     }
-  }, [educationLevel]);
+  }, []);
 
-  const {
-    getRootProps,
-    getInputProps,
-    isDragActive,
-    isDragReject
-  } = useDropzone({
+  const removeFile = () => {
+    setSelectedFile(null);
+    setUploadStatus(null);
+    setUploadProgress(0);
+  }
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
       'application/pdf': ['.pdf']
@@ -109,149 +151,77 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
     disabled: uploadStatus === ProcessingStatus.PROCESSING
   });
 
-  const resetUpload = () => {
-    setSelectedFile(null);
-    setUploadStatus(null);
-    setUploadProgress(0);
-  };
-
-  const getStatusIcon = () => {
-    switch (uploadStatus) {
-      case ProcessingStatus.PROCESSING:
-        return <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />;
-      case ProcessingStatus.COMPLETED:
-        return <CheckCircle className="w-8 h-8 text-success-600" />;
-      case ProcessingStatus.FAILED:
-        return <AlertCircle className="w-8 h-8 text-error-600" />;
-      default:
-        return isDragReject ? 
-          <AlertCircle className="w-8 h-8 text-error-500" /> :
-          <Upload className="w-8 h-8 text-secondary-400" />;
-    }
-  };
-
-  const getStatusText = () => {
-    if (uploadStatus === ProcessingStatus.PROCESSING && selectedFile) {
-      return `Processing ${selectedFile.name}...`;
-    }
-    if (uploadStatus === ProcessingStatus.COMPLETED && selectedFile) {
-      return `${selectedFile.name} processed successfully!`;
-    }
-    if (uploadStatus === ProcessingStatus.FAILED) {
-      return 'Upload failed. Click to try again.';
-    }
-    if (isDragActive) {
-      return isDragReject ? 
-        'File type not supported' : 
-        'Drop your PDF here...';
-    }
-    return 'Drop a PDF here, or click to select';
-  };
-
-  const getBorderColor = () => {
-    if (uploadStatus === ProcessingStatus.FAILED || isDragReject) {
-      return 'border-error-300 hover:border-error-400';
-    }
-    if (uploadStatus === ProcessingStatus.COMPLETED) {
-      return 'border-success-300';
-    }
-    if (isDragActive && !isDragReject) {
-      return 'border-primary-400 bg-primary-50';
-    }
-    return 'border-secondary-300 hover:border-secondary-400';
-  };
-
   return (
     <div className={clsx('w-full', className)} id="document-upload">
-      <motion.div
-        {...getRootProps()}
-        className={clsx(
-          'relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-200',
-          getBorderColor(),
-          uploadStatus === ProcessingStatus.PROCESSING && 'pointer-events-none opacity-75'
-        )}
-        whileHover={{ scale: 1.01 }}
-        whileTap={{ scale: 0.99 }}
-      >
-        <input {...getInputProps()} />
-        
-        <div className="flex flex-col items-center space-y-4">
-          {/* Status Icon */}
-          <div className="flex items-center justify-center">
-            {getStatusIcon()}
-          </div>
-
-          {/* Status Text */}
-          <div>
-            <p className="text-lg font-medium text-secondary-900">
-              {getStatusText()}
-            </p>
-            
-            {!uploadStatus && (
-              <p className="text-sm text-secondary-600 mt-2">
-                Maximum file size: 50MB • Supported format: PDF
+      {!selectedFile ? (
+        <div
+          {...getRootProps()}
+          className={clsx(
+            'relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-200',
+            'bg-white/90 backdrop-blur-sm dark:bg-secondary-800/90',
+            isDragActive ? 'border-primary-400 bg-primary-50 dark:bg-primary-900/30' : 'border-secondary-300 hover:border-secondary-400 dark:border-secondary-600 dark:hover:border-secondary-500'
+          )}
+        >
+          <input {...getInputProps()} />
+          <div className="flex flex-col items-center space-y-4">
+            <Upload className="w-8 h-8 text-secondary-400 dark:text-secondary-300" />
+            <div>
+              <p className="text-lg font-medium text-secondary-900 dark:text-white">
+                Drop a PDF here, or click to select
               </p>
-            )}
+              <p className="text-sm text-secondary-600 dark:text-secondary-300 mt-2">
+                Maximum file size: 50MB
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-white border border-secondary-200 rounded-xl p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <FileText className="w-6 h-6 text-primary-600" />
+              <div>
+                <p className="text-sm font-medium text-secondary-900">{selectedFile.name}</p>
+                <p className="text-xs text-secondary-600">{(selectedFile.size / (1024 * 1024)).toFixed(1)} MB</p>
+              </div>
+            </div>
+            <button onClick={removeFile} className="text-secondary-500 hover:text-secondary-700">
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
-          {/* Progress Bar */}
           {uploadStatus === ProcessingStatus.PROCESSING && (
-            <div className="w-full max-w-xs">
+            <div className="mt-4">
               <div className="bg-secondary-200 rounded-full h-2">
-                <motion.div
-                  className="bg-primary-600 h-2 rounded-full"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${uploadProgress}%` }}
-                  transition={{ duration: 0.3 }}
+                <div
+                  className="bg-primary-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${uploadProgress}%` }}
                 />
               </div>
-              <p className="text-xs text-secondary-600 mt-1">
-                {uploadProgress}% complete
-              </p>
+              <p className="text-xs text-secondary-600 mt-1 text-center">{uploadProgress}% complete</p>
             </div>
           )}
 
-          {/* File Info */}
-          {selectedFile && uploadStatus !== ProcessingStatus.PROCESSING && (
-            <div className="flex items-center space-x-3 bg-secondary-50 rounded-lg px-4 py-2">
-              <FileText className="w-5 h-5 text-secondary-600" />
-              <div className="text-left">
-                <p className="text-sm font-medium text-secondary-900">
-                  {selectedFile.name}
-                </p>
-                <p className="text-xs text-secondary-600">
-                  {(selectedFile.size / (1024 * 1024)).toFixed(1)} MB
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Actions */}
           {uploadStatus === ProcessingStatus.FAILED && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                resetUpload();
-              }}
-              className="btn btn-primary btn-sm"
-            >
-              Try Again
-            </button>
+            <div className="mt-4 text-center">
+                <p className="text-sm text-error-600">Upload failed. Please try again.</p>
+            </div>
           )}
-        </div>
-      </motion.div>
 
-      {/* Tips */}
-      {!uploadStatus && (
-        <div className="mt-4 text-sm text-secondary-600">
-          <p className="font-medium mb-2">Tips for best results:</p>
-          <ul className="space-y-1 text-xs">
-            <li>• Upload research papers, academic articles, or technical documents</li>
-            <li>• Ensure text is selectable (not scanned images)</li>
-            <li>• Papers with clear section headers work best</li>
-          </ul>
+          <div className="mt-6 flex justify-end">
+            <button 
+              onClick={handleUpload} 
+              disabled={uploadStatus === ProcessingStatus.PROCESSING}
+              className="btn btn-primary"
+            >
+              {uploadStatus === ProcessingStatus.PROCESSING ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processing...</>
+              ) : 'Upload & Analyze'}
+            </button>
+          </div>
         </div>
       )}
+
     </div>
   );
 };

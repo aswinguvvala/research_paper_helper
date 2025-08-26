@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import chatRoutes from './chat-routes';
 import documentRoutes from './document-routes';
+import highlightRoutes from './highlight-routes';
 import { documentService } from '../services/document/document-service';
 import { databaseManager } from '../database/connection';
 import logger from '../utils/logger';
@@ -10,6 +11,7 @@ const router = Router();
 // Mount route modules
 router.use('/chat', chatRoutes);
 router.use('/documents', documentRoutes);
+router.use('/', highlightRoutes);
 
 // Health check endpoint
 router.get('/health', async (req, res) => {
@@ -83,6 +85,14 @@ router.get('/info', (req, res) => {
         'GET /api/documents/:documentId/processing-status': 'Get processing status',
         'POST /api/documents/:documentId/cache/warmup': 'Warm up vector cache',
         'DELETE /api/documents/:documentId': 'Delete document'
+      },
+      highlights: {
+        'POST /api/documents/:documentId/highlights': 'Create highlight for document',
+        'GET /api/documents/:documentId/highlights': 'Get all highlights for document',
+        'GET /api/documents/:documentId/highlights/export': 'Export highlights as JSON',
+        'GET /api/highlights/:highlightId': 'Get specific highlight by ID',
+        'PUT /api/highlights/:highlightId': 'Update highlight color and notes',
+        'DELETE /api/highlights/:highlightId': 'Delete highlight'
       },
       system: {
         'GET /api/health': 'Health check endpoint',
