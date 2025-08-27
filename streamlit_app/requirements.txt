@@ -1,75 +1,31 @@
-# Streamlit Research Paper Helper - Python Dependencies
+# Streamlit Research Paper Helper - Cloud Deployment Dependencies
+# Optimized for Streamlit Cloud with no compilation requirements
 
 # Core Streamlit framework
 streamlit==1.28.1
-streamlit-option-menu==0.3.6
 
-# HTTP requests and API communication
-requests==2.31.0
-urllib3==2.0.7
-
-# PDF processing and manipulation
+# Simple PDF processing (no compilation required)
 PyPDF2==3.0.1
-PyMuPDF==1.23.8  # fitz for better PDF handling
-pdfplumber==0.9.0  # Alternative PDF text extraction
 
 # Data processing
-pandas==2.1.3
-numpy==1.25.2
+pandas==2.0.3
+numpy==1.24.3
 
 # Date and time handling
 python-dateutil==2.8.2
 
-# Additional Streamlit components
-streamlit-aggrid==0.3.4  # Interactive data grids
-streamlit-plotly-events==0.0.6  # Plotly charts with interactions
-streamlit-elements==0.1.0  # Additional UI elements
-
-# Image processing (for PDF thumbnails if needed)
-Pillow==10.1.0
-
-# Configuration and environment
-python-dotenv==1.0.0
-
-# Async HTTP client (alternative to requests)
-httpx==0.25.2
-
-# JSON handling improvements
+# JSON handling
 orjson==3.9.10
 
 # Additional utilities
 uuid==1.30
 typing-extensions==4.8.0
 
-# Optional: Enhanced PDF viewer components
-# streamlit-pdf-viewer==0.0.1  # If available
-# st-pdf-viewer==0.1.0  # Alternative PDF viewer
+# Configuration
+python-dotenv==1.0.0
 
-# Development and debugging
-streamlit-debug==1.0.0  # Development helper
-
-# Security
-cryptography==41.0.7
-
-# Caching and performance
-streamlit-cache==0.1.0
-
-# Optional: Advanced UI components
-# streamlit-shadcn-ui==0.0.1  # Modern UI components
-# streamlit-antd-components==0.1.11  # Ant Design components
-
-# Optional: Authentication if needed
-# streamlit-authenticator==0.2.3
-
-# Optional: Database connections if needed locally
-# sqlite3 (built-in with Python)
-
-# Optional: Enhanced text processing
+# Optional: Text processing
 beautifulsoup4==4.12.2
-lxml==4.9.3
-
-# Optional: File handling improvements
-pathlib==1.0.1
 
 # Optional: Markdown processing
 markdown==3.5.1

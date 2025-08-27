@@ -1,12 +1,11 @@
 """
-Streamlit Research Paper Helper - Main Application
-A Streamlit version of the React research paper analysis application
+Streamlit Research Paper Helper - Cloud-Ready Demo Application
+A Streamlit version that works standalone with simulated AI responses
+Optimized for Streamlit Cloud deployment without backend dependencies
 """
 
 import streamlit as st
-import requests
 import json
-import base64
 import time
 import os
 from typing import Optional, List, Dict, Any
@@ -15,13 +14,19 @@ from enum import Enum
 import uuid
 import PyPDF2
 from io import BytesIO
-import fitz  # PyMuPDF for better PDF handling
-import pandas as pd
 from datetime import datetime
 
-# Configuration
+# Configuration - Demo mode for cloud deployment
+DEMO_MODE = os.getenv("DEMO_MODE", "true").lower() == "true"
 API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
-STREAMLIT_SERVER_PORT = int(os.getenv("STREAMLIT_SERVER_PORT", 8501))
+
+# Page config
+st.set_page_config(
+    page_title="Research Paper AI Assistant",
+    page_icon="📚",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
 # Education levels matching the React app
 class EducationLevel(str, Enum):
@@ -120,25 +125,122 @@ def initialize_session_state():
         
     if "chat_session_id" not in st.session_state:
         st.session_state.chat_session_id = str(uuid.uuid4())
+        
+    if "pdf_text" not in st.session_state:
+        st.session_state.pdf_text = ""
 
-# API Helper functions
+# PDF Processing Functions
+def extract_text_from_pdf(pdf_file) -> str:
+    """Extract text from uploaded PDF using PyPDF2"""
+    try:
+        pdf_reader = PyPDF2.PdfReader(BytesIO(pdf_file.read()))
+        text = ""
+        for page in pdf_reader.pages:
+            text += page.extract_text() + "\n\n"
+        return text
+    except Exception as e:
+        st.error(f"Error extracting text: {str(e)}")
+        return ""
+
+def generate_mock_response(message: str, education_level: EducationLevel, selected_text: str = "") -> str:
+    """Generate mock AI responses based on education level"""
+    
+    # Sample responses based on common research paper topics
+    if selected_text:
+        text_preview = selected_text[:100] + "..." if len(selected_text) > 100 else selected_text
+    else:
+        text_preview = "the research content"
+    
+    responses_by_level = {
+        EducationLevel.NO_TECHNICAL: {
+            "explain": f"Let me break down {text_preview} in simple terms: This research is like solving a puzzle. The scientists had a question, they did experiments to find answers, and they discovered something new that helps us understand the world better. Think of it like when you're curious about something and you investigate to find out more!",
+            
+            "simplify": f"Here's what this means in everyday language: The researchers were trying to figure something out, just like when you're trying to solve a problem at home. They used special methods (like following a recipe) to find their answer. The results they found are important because they help us understand things better.",
+            
+            "followup": "Great questions to ask: What does this mean for people like me? How will this help in everyday life? Can you give me a real-world example? Why should I care about this research?",
+            
+            "general": "I see you're interested in learning about this research! I'll explain everything in simple terms without using confusing scientific words. What would you like to understand better?"
+        },
+        
+        EducationLevel.HIGH_SCHOOL: {
+            "explain": f"Looking at {text_preview}: This research follows the scientific method you've learned about. The researchers started with a hypothesis (educated guess), designed experiments to test it, collected data, and drew conclusions. The methodology they used is more advanced than typical high school experiments, but the basic principles are the same.",
+            
+            "simplify": f"Breaking this down: Think of this like the science projects you do in class, but much more complex. The researchers used advanced tools and statistics to make sure their results were accurate. They had to consider many variables that might affect their findings.",
+            
+            "followup": "Consider these questions: What was their hypothesis? How did they control for other factors? What do their results mean? How does this connect to what you've learned in science class?",
+            
+            "general": "This research uses advanced versions of scientific concepts you're familiar with. I'll connect it to what you've learned in your science classes and explain the more complex parts step by step."
+        },
+        
+        EducationLevel.UNDERGRADUATE: {
+            "explain": f"Analyzing {text_preview}: This represents systematic academic research using established methodological frameworks. The researchers employed quantitative/qualitative analysis techniques that you've encountered in your coursework. Notice how they structure their argument, present evidence, and acknowledge limitations.",
+            
+            "simplify": f"At the undergraduate level: This research demonstrates rigorous academic methodology. The authors follow standard research protocols, use appropriate statistical analysis, and situate their work within existing literature - all practices you're learning in your major.",
+            
+            "followup": "Critical thinking questions: What's the research question? How robust is their methodology? What are the implications for the field? How does this compare to other studies you've read?",
+            
+            "general": "This research exemplifies the kind of academic work you're learning to understand and eventually produce. I'll help you analyze the methodology, findings, and significance within your field of study."
+        },
+        
+        EducationLevel.MASTERS: {
+            "explain": f"Examining {text_preview}: This work demonstrates sophisticated research design with clear theoretical grounding. The authors navigate complex methodological considerations and present nuanced findings that contribute meaningfully to the academic discourse. Note the integration of multiple analytical frameworks.",
+            
+            "simplify": f"At the graduate level: This research represents advanced scholarly contribution with methodological rigor and theoretical sophistication. The work bridges existing knowledge gaps and opens new avenues for investigation in the field.",
+            
+            "followup": "Advanced analysis questions: How does the theoretical framework inform the methodology? What are the epistemological assumptions? How might you build upon this research? What are the policy or practical implications?",
+            
+            "general": "This research represents the caliber of work you're developing expertise in. I'll help you critically evaluate the theoretical contributions, methodological choices, and broader significance for your field."
+        },
+        
+        EducationLevel.PHD: {
+            "explain": f"Regarding {text_preview}: This work presents sophisticated theoretical contributions with methodological innovation. Consider the ontological foundations, the interplay between theory and method, and the potential paradigmatic implications. The research demonstrates both rigor and creativity in addressing complex phenomena.",
+            
+            "simplify": f"At the doctoral level: This scholarship exemplifies advanced research praxis, integrating theoretical sophistication with methodological innovation. The work's contribution to knowledge production and its potential influence on future research directions merit careful consideration.",
+            
+            "followup": "Doctoral-level considerations: What are the epistemological and ontological commitments? How does this advance theory? What are the methodological innovations? How might this influence your own research agenda?",
+            
+            "general": "This research represents the kind of scholarly contribution you're trained to produce and critique. I'll engage with the complex theoretical, methodological, and paradigmatic dimensions of the work."
+        }
+    }
+    
+    level_responses = responses_by_level.get(education_level, responses_by_level[EducationLevel.UNDERGRADUATE])
+    
+    if "explain" in message.lower() and selected_text:
+        return level_responses["explain"]
+    elif "simplify" in message.lower() and selected_text:
+        return level_responses["simplify"]
+    elif "follow-up" in message.lower() or "followup" in message.lower():
+        return level_responses["followup"]
+    else:
+        return level_responses["general"]
+
+# Demo API Client - Simulates backend functionality
 class APIClient:
-    """Helper class for API communications"""
+    """Helper class for simulated API communications"""
     
     @staticmethod
     def upload_document(file_bytes: bytes, filename: str, education_level: EducationLevel) -> Optional[str]:
-        """Upload document to backend API"""
+        """Simulate document upload by processing PDF locally"""
         try:
-            files = {"file": (filename, file_bytes, "application/pdf")}
-            data = {"educationLevel": education_level.value}
+            # Extract text using PyPDF2
+            pdf_text = extract_text_from_pdf(BytesIO(file_bytes))
             
-            response = requests.post(f"{API_BASE_URL}/api/documents/upload", files=files, data=data)
-            
-            if response.status_code == 201:
-                result = response.json()
-                return result.get("document", {}).get("id")
+            if pdf_text.strip():
+                document_id = str(uuid.uuid4())
+                
+                # Store document info in session state
+                st.session_state.current_document = Document(
+                    id=document_id,
+                    filename=filename,
+                    title=filename.replace('.pdf', '').replace('_', ' ').title(),
+                    authors=[],
+                    total_pages=len(pdf_text.split('\n\n')) // 10,  # Rough estimate
+                    uploaded_at=datetime.now()
+                )
+                st.session_state.pdf_text = pdf_text
+                return document_id
             else:
-                st.error(f"Upload failed: {response.text}")
+                st.error("❌ Could not extract text from this PDF. Please try a different file.")
                 return None
                 
         except Exception as e:
@@ -147,49 +249,18 @@ class APIClient:
     
     @staticmethod
     def get_document(document_id: str) -> Optional[Document]:
-        """Get document metadata from API"""
-        try:
-            response = requests.get(f"{API_BASE_URL}/api/documents/{document_id}")
-            
-            if response.status_code == 200:
-                data = response.json()["document"]
-                return Document(
-                    id=data["id"],
-                    filename=data["filename"], 
-                    title=data.get("title", ""),
-                    authors=data.get("authors", []),
-                    total_pages=data["total_pages"],
-                    uploaded_at=datetime.fromisoformat(data["uploaded_at"].replace('Z', '+00:00'))
-                )
-            return None
-        except Exception as e:
-            st.error(f"Failed to fetch document: {str(e)}")
-            return None
+        """Get document from session state (demo mode)"""
+        # In demo mode, document is stored in session state
+        return st.session_state.get("current_document", None)
     
     @staticmethod
     def send_chat_message(document_id: str, message: str, education_level: EducationLevel, 
                          session_id: str, highlighted_text: str = "") -> Optional[str]:
-        """Send chat message to API"""
+        """Generate simulated AI chat response"""
         try:
-            payload = {
-                "message": message,
-                "educationLevel": education_level.value,
-                "sessionId": session_id,
-                "contextData": {
-                    "highlightedText": highlighted_text,
-                    "currentPage": st.session_state.get("current_page", 1)
-                }
-            }
-            
-            response = requests.post(f"{API_BASE_URL}/api/chat", json=payload)
-            
-            if response.status_code == 200:
-                result = response.json()
-                return result.get("response", "")
-            else:
-                st.error(f"Chat error: {response.text}")
-                return None
-                
+            # Use the mock response generator
+            response = generate_mock_response(message, education_level, highlighted_text)
+            return response
         except Exception as e:
             st.error(f"Chat error: {str(e)}")
             return None
@@ -197,60 +268,32 @@ class APIClient:
     @staticmethod 
     def create_highlight(document_id: str, page_number: int, selected_text: str, 
                         color: str, notes: str = "") -> Optional[Highlight]:
-        """Create highlight via API"""
+        """Create highlight in session state (demo mode)"""
         try:
-            payload = {
-                "documentId": document_id,
-                "pageNumber": page_number, 
-                "selectedText": selected_text,
-                "startPosition": 0,
-                "endPosition": len(selected_text),
-                "color": color,
-                "notes": notes
-            }
+            highlight = Highlight(
+                id=str(uuid.uuid4()),
+                document_id=document_id,
+                page_number=page_number,
+                selected_text=selected_text,
+                color=color,
+                notes=notes,
+                created_at=datetime.now()
+            )
             
-            response = requests.post(f"{API_BASE_URL}/api/documents/{document_id}/highlights", 
-                                   json=payload)
+            # Store in session state
+            if "highlights" not in st.session_state:
+                st.session_state.highlights = []
+            st.session_state.highlights.append(highlight)
             
-            if response.status_code == 201:
-                data = response.json()["highlight"]
-                return Highlight(
-                    id=data["id"],
-                    document_id=data["documentId"],
-                    page_number=data["pageNumber"], 
-                    selected_text=data["selectedText"],
-                    color=data["color"],
-                    notes=data.get("notes", ""),
-                    created_at=datetime.fromisoformat(data["createdAt"].replace('Z', '+00:00'))
-                )
-            return None
+            return highlight
         except Exception as e:
             st.error(f"Failed to create highlight: {str(e)}")
             return None
     
     @staticmethod
     def get_highlights(document_id: str) -> List[Highlight]:
-        """Get all highlights for document"""
-        try:
-            response = requests.get(f"{API_BASE_URL}/api/documents/{document_id}/highlights")
-            
-            if response.status_code == 200:
-                highlights_data = response.json()["highlights"]
-                return [
-                    Highlight(
-                        id=h["id"],
-                        document_id=h["documentId"],
-                        page_number=h["pageNumber"],
-                        selected_text=h["selectedText"], 
-                        color=h["color"],
-                        notes=h.get("notes", ""),
-                        created_at=datetime.fromisoformat(h["createdAt"].replace('Z', '+00:00'))
-                    ) for h in highlights_data
-                ]
-            return []
-        except Exception as e:
-            st.error(f"Failed to get highlights: {str(e)}")
-            return []
+        """Get highlights from session state (demo mode)"""
+        return st.session_state.get("highlights", [])
 
 # UI Components
 def render_hero_section():
@@ -258,14 +301,26 @@ def render_hero_section():
     st.markdown("""
     <div style="text-align: center; padding: 2rem 0;">
         <h1 style="font-size: 3rem; font-weight: bold; color: #1f2937; margin-bottom: 1rem;">
-            📚 Upload, Analyze, Learn
+            📚 Research Paper AI Assistant
         </h1>
         <p style="font-size: 1.25rem; color: #6b7280; margin-bottom: 2rem; max-width: 800px; margin-left: auto; margin-right: auto;">
-            Upload any research paper to get AI-powered explanations at your education level. 
-            Chat with your documents and get contextual insights adapted to your background.
+            Transform how you understand research papers with AI-powered explanations 
+            adapted to your education level. Upload, analyze, and learn with confidence.
         </p>
     </div>
     """, unsafe_allow_html=True)
+    
+    # Demo banner for cloud deployment
+    if DEMO_MODE:
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 2px solid #f59e0b; border-radius: 12px; padding: 16px; margin: 16px auto; max-width: 800px; text-align: center;">
+            <h3 style="margin: 0 0 8px 0; color: #92400e;">🚀 Interactive Demo Version</h3>
+            <p style="margin: 0; color: #92400e; font-size: 0.9rem;">
+                This demo showcases our AI-powered research paper analysis interface with simulated responses. 
+                Upload a PDF to see text extraction and education-level adapted explanations in action!
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
 
 def render_education_level_selector():
     """Render education level selection"""
@@ -329,6 +384,10 @@ def render_document_upload():
         if st.button("🚀 Upload and Analyze", type="primary"):
             with st.spinner("Uploading and processing document..."):
                 file_bytes = uploaded_file.read()
+                
+                # Reset file pointer for processing
+                uploaded_file.seek(0)
+                
                 document_id = APIClient.upload_document(
                     file_bytes, 
                     uploaded_file.name, 
@@ -336,9 +395,8 @@ def render_document_upload():
                 )
                 
                 if document_id:
-                    st.session_state.current_document = APIClient.get_document(document_id)
                     st.success("✅ Document uploaded successfully!")
-                    time.sleep(1)
+                    time.sleep(1.5)
                     st.rerun()
 
 def render_document_viewer():
@@ -401,17 +459,21 @@ def render_pdf_viewer():
             st.session_state.current_page = min(st.session_state.current_document.total_pages, st.session_state.current_page + 1)
             st.rerun()
     
-    # PDF display (using iframe for now - in production you'd use st_pdf_viewer or similar)
-    pdf_url = f"{API_BASE_URL}/api/documents/{st.session_state.current_document.id}/pdf"
-    
-    st.markdown(f"""
-    <div style="border: 1px solid #e5e7eb; border-radius: 0.5rem; height: 600px; overflow: hidden;">
-        <iframe src="{pdf_url}#page={st.session_state.current_page}" 
-                width="100%" height="100%" 
-                style="border: none;">
-        </iframe>
-    </div>
-    """, unsafe_allow_html=True)
+    # Display extracted text in demo mode
+    if st.session_state.pdf_text:
+        char_count = len(st.session_state.pdf_text)
+        word_count = len(st.session_state.pdf_text.split())
+        
+        st.info(f"📊 **Document Stats**: {char_count:,} characters • {word_count:,} words")
+        
+        # Truncate very long text for display
+        display_text = st.session_state.pdf_text
+        if len(display_text) > 8000:
+            display_text = display_text[:8000] + f"\n\n... [Content truncated for display. Full text ({char_count:,} chars) available for analysis]"
+        
+        st.text_area("Extracted Text", display_text, height=400, disabled=True)
+    else:
+        st.info("📄 Upload a PDF to see extracted content here")
     
     # Text selection and highlighting
     render_text_selection_tools()
@@ -632,10 +694,14 @@ def render_sidebar():
             st.write(f"Level: {EDUCATION_LEVEL_CONFIG[st.session_state.education_level]['label']}")
             
             if st.button("🏠 Upload New Document"):
-                st.session_state.current_document = None
-                st.session_state.chat_messages = []
-                st.session_state.highlights = []
-                st.session_state.selected_text = ""
+                # Reset all document-related state
+                for key in ["current_document", "chat_messages", "highlights", "selected_text", "pdf_text"]:
+                    if key in ["chat_messages", "highlights"]:
+                        st.session_state[key] = []
+                    elif key in ["selected_text", "pdf_text"]:
+                        st.session_state[key] = ""
+                    else:
+                        st.session_state[key] = None
                 st.session_state.current_page = 1
                 st.rerun()
             
@@ -652,24 +718,39 @@ def render_sidebar():
         st.markdown("---")
         
         # App info
-        st.subheader("ℹ️ About")
-        st.write("Research Paper AI Assistant helps you understand complex research papers through AI-powered explanations tailored to your education level.")
-        
-        st.write("**Features:**")
-        st.write("• AI-powered explanations")
-        st.write("• Text highlighting")
-        st.write("• Interactive chat")
-        st.write("• Multi-level adaptation")
+        if DEMO_MODE:
+            st.subheader("ℹ️ About This Demo")
+            st.markdown("""
+            **🚀 Demo Features:**
+            - 📄 PDF text extraction
+            - 🎓 Education-level adaptation
+            - 🤖 Simulated AI responses
+            - 🎨 Text highlighting
+            - 💬 Interactive chat
+            
+            **🔧 Technology:**
+            - Streamlit framework
+            - PyPDF2 for PDF processing
+            - Python-based UI
+            
+            **💡 Full Version:**
+            - Real AI integration
+            - Advanced PDF viewer
+            - Database persistence
+            - Backend API
+            """)
+        else:
+            st.subheader("ℹ️ About")
+            st.write("Research Paper AI Assistant helps you understand complex research papers through AI-powered explanations tailored to your education level.")
+            
+            st.write("**Features:**")
+            st.write("• AI-powered explanations")
+            st.write("• Text highlighting")
+            st.write("• Interactive chat")
+            st.write("• Multi-level adaptation")
 
 def main():
     """Main application function"""
-    # Page config
-    st.set_page_config(
-        page_title="Research Paper AI Assistant",
-        page_icon="📚",
-        layout="wide",
-        initial_sidebar_state="expanded"
-    )
     
     # Custom CSS
     st.markdown("""
