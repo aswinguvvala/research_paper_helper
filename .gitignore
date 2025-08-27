@@ -80,9 +80,15 @@ tmp/
 temp/
 *.tmp
 
-# PDF uploads (for development)
-uploads/test_pdfs/
+# PDF uploads (for development - exclude actual PDF files)
+server/uploads/*.pdf
+server/uploads/*.doc
+server/uploads/*.docx
 !uploads/.gitkeep
+
+# Streamlit specific
+.streamlit/secrets.toml
+streamlit_app/.streamlit/secrets.toml
 
 # Local development files
 .local/

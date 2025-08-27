@@ -1,0 +1,28 @@
+[general]
+dataFrameSerialization = "legacy"
+
+[server]
+runOnSave = true
+allowRunOnSave = true
+port = 8501
+address = "0.0.0.0"
+baseUrlPath = ""
+enableCORS = false
+enableXsrfProtection = false
+maxUploadSize = 200
+
+[browser]
+gatherUsageStats = false
+showErrorDetails = false
+
+[theme]
+primaryColor = "#3b82f6"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f1f5f9"
+textColor = "#262730"
+font = "sans serif"
+
+[client]
+caching = true
+displayEnabled = true
+showErrorDetails = false
