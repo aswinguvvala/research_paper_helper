@@ -5,11 +5,9 @@ Optimized for Streamlit Cloud deployment without backend dependencies
 """
 
 import streamlit as st
-import json
 import time
 import os
-from typing import Optional, List, Dict, Any
-from dataclasses import dataclass
+from typing import Optional, List
 from enum import Enum
 import uuid
 import PyPDF2
@@ -75,32 +73,34 @@ HIGHLIGHT_COLORS = {
     "red": {"name": "Alert Red", "color": "#FECACA", "text": "#DC2626"}
 }
 
-@dataclass
 class Document:
-    id: str
-    filename: str
-    title: str
-    authors: List[str]
-    total_pages: int
-    uploaded_at: datetime
-    processed_at: Optional[datetime] = None
+    def __init__(self, id: str, filename: str, title: str, authors: List[str], 
+                 total_pages: int, uploaded_at: datetime, processed_at: Optional[datetime] = None):
+        self.id = id
+        self.filename = filename
+        self.title = title
+        self.authors = authors
+        self.total_pages = total_pages
+        self.uploaded_at = uploaded_at
+        self.processed_at = processed_at
 
-@dataclass 
 class ChatMessage:
-    role: str  # 'user', 'assistant', 'system'
-    content: str
-    timestamp: datetime
-    highlighted_text: Optional[str] = None
+    def __init__(self, role: str, content: str, timestamp: datetime, highlighted_text: Optional[str] = None):
+        self.role = role
+        self.content = content
+        self.timestamp = timestamp
+        self.highlighted_text = highlighted_text
 
-@dataclass
 class Highlight:
-    id: str
-    document_id: str
-    page_number: int
-    selected_text: str
-    color: str
-    notes: Optional[str]
-    created_at: datetime
+    def __init__(self, id: str, document_id: str, page_number: int, selected_text: str,
+                 color: str, notes: Optional[str], created_at: datetime):
+        self.id = id
+        self.document_id = document_id
+        self.page_number = page_number
+        self.selected_text = selected_text
+        self.color = color
+        self.notes = notes
+        self.created_at = created_at
 
 # Initialize session state
 def initialize_session_state():
