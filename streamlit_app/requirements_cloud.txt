@@ -1,0 +1,34 @@
+# Streamlit Research Paper Helper - Cloud Deployment Dependencies
+# Optimized for Streamlit Cloud with no compilation requirements
+
+# Core Streamlit framework
+streamlit==1.28.1
+
+# HTTP requests for API communication  
+requests==2.31.0
+
+# Simple PDF processing (no compilation required)
+PyPDF2==3.0.1
+
+# Data processing
+pandas==2.0.3
+numpy==1.24.3
+
+# Date and time handling
+python-dateutil==2.8.2
+
+# JSON handling
+orjson==3.9.10
+
+# Additional utilities
+uuid==1.30
+typing-extensions==4.8.0
+
+# Configuration
+python-dotenv==1.0.0
+
+# Optional: Text processing
+beautifulsoup4==4.12.2
+
+# Optional: Markdown processing
+markdown==3.5.1
